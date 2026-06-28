@@ -1,0 +1,27 @@
+{
+  "name": "floraintellect-v2",
+  "version": "1.0.0",
+  "description": "Identificación de plantas medicinales por foto con fuentes OMS/TRAMIL",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "plantas-medicinales",
+    "ia",
+    "oms",
+    "tramil",
+    "plant-id"
+  ],
+  "author": "Derek González",
+  "license": "MIT",
+  "dependencies": {
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1"
+  }
+}
