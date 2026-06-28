@@ -542,8 +542,99 @@
       font-size: var(--text-sm);
     }
 
+    .home-featured {
+      margin-top: var(--space-12);
+    }
+
+    .home-featured-head {
+      max-width: 620px;
+      margin-bottom: var(--space-6);
+    }
+
+    .home-featured-head h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: var(--text-3xl);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .home-featured-head p {
+      color: var(--color-text-secondary);
+    }
+
+    .home-featured-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+    }
+
+    .home-featured-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+
+    .home-featured-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .home-featured-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--color-accent-light);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      margin-bottom: var(--space-4);
+    }
+
+    .home-featured-name {
+      font: 600 var(--text-lg)/1.3 'Inter', sans-serif;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .home-featured-sci {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      color: var(--color-primary);
+      margin-bottom: var(--space-4);
+    }
+
+    .home-featured-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: auto;
+    }
+
+    .home-featured-tags span {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      background: #E8F5E9;
+      color: var(--color-primary);
+      font: 500 var(--text-xs)/1 'Inter', sans-serif;
+    }
+
     @media (max-width: 1023px) {
       .home-benefits {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .home-featured-grid {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -556,6 +647,10 @@
 
     @media (max-width: 639px) {
       .home-benefits {
+        grid-template-columns: 1fr;
+      }
+
+      .home-featured-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1597,6 +1692,55 @@
 </div>
 
     <!-- ── CHAT ────────────────────────────────────────────────── -->
+<div class="home-featured">
+  <div class="home-featured-head">
+    <h2>Plantas destacadas</h2>
+    <p>Algunas especies verificadas incluidas en la base curada.</p>
+  </div>
+
+  <div class="home-featured-grid">
+    <article class="home-featured-card">
+      <div class="home-featured-icon">🌼</div>
+      <h3 class="home-featured-name">Manzanilla</h3>
+      <p class="home-featured-sci">Matricaria chamomilla</p>
+      <div class="home-featured-tags">
+        <span>Digestiva</span>
+        <span>Calmante</span>
+      </div>
+    </article>
+
+    <article class="home-featured-card">
+      <div class="home-featured-icon">🌙</div>
+      <h3 class="home-featured-name">Valeriana</h3>
+      <p class="home-featured-sci">Valeriana officinalis</p>
+      <div class="home-featured-tags">
+        <span>Sueño</span>
+        <span>Relajación</span>
+      </div>
+    </article>
+
+    <article class="home-featured-card">
+      <div class="home-featured-icon">🫚</div>
+      <h3 class="home-featured-name">Jengibre</h3>
+      <p class="home-featured-sci">Zingiber officinale</p>
+      <div class="home-featured-tags">
+        <span>Digestión</span>
+        <span>Náuseas</span>
+      </div>
+    </article>
+
+    <article class="home-featured-card">
+      <div class="home-featured-icon">🌱</div>
+      <h3 class="home-featured-name">Aloe vera</h3>
+      <p class="home-featured-sci">Aloe vera</p>
+      <div class="home-featured-tags">
+        <span>Piel</span>
+        <span>Uso tópico</span>
+      </div>
+    </article>
+  </div>
+</div>
+
       </div>
     </section>
 
