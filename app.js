@@ -148,6 +148,7 @@ function renderHistorial() {
   } else {
     for (const m of state.chat) {
       if (m.role === "user") addUserMessage(m.content, false);
+      else if (m.plant) renderPlantCardMessage(m.plant, m.content, m.fuentes || [], false);
       else addBotMessage(m.content, m.fuentes || [], false);
     }
   }
@@ -193,6 +194,64 @@ function addBotMessage(text, fuentes = [], animate = true, skipBadge = false) {
   }
   cont.scrollTop = cont.scrollHeight;
   return div;
+}
+
+function renderPlantCardMessage(plant, text = "", fuentes = [], animate = true) {
+  const cont = document.getElementById("chat-messages");
+  if (!cont || !plant) return addBotMessage(text, fuentes, animate);
+
+  const imagePath = getPlantImagePath(plant.nombre_comun);
+  const usos = Array.isArray(plant.usos_medicinales || plant.usos)
+    ? (plant.usos_medicinales || plant.usos).slice(0, 4)
+    : [];
+  const fuenteItems = plant.fuentes?.length ? plant.fuentes : fuentes;
+  const evidencia = plant.nivel_evidencia || plant.evidencia || "";
+
+  const group = document.createElement("div");
+  group.className = "plant-msg-group";
+  if (!animate) group.style.animation = "none";
+
+  group.innerHTML = `
+    ${text ? `<div class="msg ia plant-msg-text">${escapeHtml(text)}</div>` : ""}
+    <article class="plant-msg-card">
+      <div class="plant-msg-img">
+        ${imagePath
+          ? `<img data-src="${escapeAttr(imagePath)}" alt="${escapeAttr(plant.nombre_comun || "Planta medicinal")}">`
+          : `<div class="plant-msg-img-fallback">🌿</div>`}
+      </div>
+      <div class="plant-msg-body">
+        <div class="plant-msg-name">${escapeHtml(plant.nombre_comun || "Planta medicinal")}</div>
+        ${plant.nombre_cientifico ? `<div class="plant-msg-sci">${escapeHtml(plant.nombre_cientifico)}</div>` : ""}
+        ${evidencia ? `<div class="plant-msg-evidence">Evidencia: ${escapeHtml(capitalize(evidencia))}</div>` : ""}
+        ${usos.length ? `<div class="plant-msg-usos">${usos.map(u => `<span>${escapeHtml(u)}</span>`).join("")}</div>` : ""}
+        ${plant.advertencia ? `<div class="plant-msg-warning">${escapeHtml(plant.advertencia)}</div>` : ""}
+        <button class="plant-msg-button" type="button">Ver ficha completa</button>
+      </div>
+    </article>
+    ${fuenteItems?.length ? `
+      <div class="plant-msg-sources">
+        ${fuenteItems.map(f => {
+          const nombre = typeof f === "string" ? f : (f.nombre || f.name || "Fuente");
+          const url = typeof f === "object" ? (f.url || f.href || "") : "";
+          return url
+            ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${escapeHtml(nombre)}</a>`
+            : `<span>${escapeHtml(nombre)}</span>`;
+        }).join("")}
+      </div>
+    ` : ""}
+  `;
+
+  const img = group.querySelector(".plant-msg-img img");
+  if (img) {
+    img.addEventListener("error", e => {
+      handlePlantImageError(e.currentTarget, "plant-msg-img-fallback");
+    });
+    img.src = img.dataset.src;
+  }
+  group.querySelector(".plant-msg-button")?.addEventListener("click", () => openPlantModal(plant));
+  cont.appendChild(group);
+  cont.scrollTop = cont.scrollHeight;
+  return group;
 }
 
 function addTyping() {
@@ -253,8 +312,10 @@ async function sendChatMessage(text) {
       body: JSON.stringify({ messages })
     });
     removeTyping();
-    state.chat.push({ role: "assistant", content: data.reply, fuentes: data.fuentes || [] });
-    addBotMessage(data.reply, data.fuentes || []);
+    const plant = getChatPlantData(data);
+    state.chat.push({ role: "assistant", content: data.reply, fuentes: data.fuentes || [], plant });
+    if (plant) renderPlantCardMessage(plant, data.reply, data.fuentes || []);
+    else addBotMessage(data.reply, data.fuentes || []);
     saveHistorial();
   } catch (e) {
     removeTyping();
@@ -551,20 +612,31 @@ function vCard(p) {
 function openModal(id) {
   const p = state.verificadas.find(x => x.id === id);
   if (!p) return;
-  const inicial = (p.nombre_comun || "?").charAt(0).toUpperCase();
-  const wikiUrl = getWikiUrl(p.imagen_referencia);
-  const img = wikiUrl
-    ? `<img src="${escapeAttr(wikiUrl)}" alt="${escapeAttr(p.nombre_comun)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'modal-img-fallback',textContent:this.alt.charAt(0).toUpperCase()}))" />`
-    : `<div class="modal-img-fallback">${inicial}</div>`;
+  openPlantModal(p);
+}
+
+function openCatalogoModal(index) {
+  const p = state.catalogoFiltered[Number(index)];
+  if (!p) return;
+  openPlantModal(p);
+}
+
+function openPlantModal(p) {
+  const imagePath = getPlantImagePath(p.nombre_comun);
+  const img = imagePath
+    ? `<img src="${escapeAttr(imagePath)}" alt="${escapeAttr(p.nombre_comun || "Planta medicinal")}" onerror="handlePlantImageError(this, 'modal-img-fallback')" />`
+    : `<div class="modal-img-fallback">🌿</div>`;
   const nivel = p.nivel_evidencia || "folk";
+  const usos = p.usos_medicinales || p.usos;
+  const interacciones = p.interacciones_farmacologicas || p.interacciones;
 
   const secciones = [
-    ["Usos medicinales", Array.isArray(p.usos_medicinales) ? `<ul>${p.usos_medicinales.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>` : `<p>${escapeHtml(p.usos_medicinales || "—")}</p>`],
+    ["Usos medicinales", Array.isArray(usos) ? `<ul>${usos.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>` : `<p>${escapeHtml(usos || "—")}</p>`],
     ["Parte usada",       `<p>${escapeHtml(p.parte_usada || "—")}</p>`],
     ["Preparación",       `<p>${escapeHtml(p.preparacion || "—")}</p>`],
     ["Dosis",             `<p>${escapeHtml(p.dosis || "—")}</p>`],
     ["Contraindicaciones",Array.isArray(p.contraindicaciones) ? `<ul>${p.contraindicaciones.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>` : `<p>${escapeHtml(p.contraindicaciones || "—")}</p>`],
-    ["Interacciones",     Array.isArray(p.interacciones_farmacologicas) ? `<ul>${p.interacciones_farmacologicas.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>` : `<p>${escapeHtml(p.interacciones_farmacologicas || "—")}</p>`],
+    ["Interacciones",     Array.isArray(interacciones) ? `<ul>${interacciones.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>` : `<p>${escapeHtml(interacciones || "—")}</p>`],
   ];
 
   const html = `
@@ -573,7 +645,7 @@ function openModal(id) {
     </button>
     <div class="modal-img">
       ${img}
-      <span class="badge-pill-overlay ${nivel}">${capitalize(nivel)}</span>
+      ${p.nivel_evidencia ? `<span class="badge-pill-overlay ${nivel}">${capitalize(nivel)}</span>` : ""}
     </div>
     <h3 class="modal-nombre serif-600">${escapeHtml(p.nombre_comun)}</h3>
     <div class="modal-cientifico">${escapeHtml(p.nombre_cientifico || "")}</div>
@@ -720,6 +792,10 @@ function renderCatalogo() {
     grid.innerHTML = `<p style="color:var(--color-text-muted); grid-column: 1/-1; text-align:center; padding: 32px 0;">No se encontraron plantas con esos criterios.</p>`;
   } else {
     grid.innerHTML = slice.map((p, i) => catCard(p, start + i)).join("");
+    setupLazyImages(grid);
+    grid.querySelectorAll(".cat-card").forEach(card => {
+      card.addEventListener("click", () => openCatalogoModal(card.dataset.index));
+    });
   }
 
   const pag = document.getElementById("cat-pagination");
@@ -734,18 +810,23 @@ function renderCatalogo() {
 }
 
 function catCard(p, i) {
-  const color = CAT_COLORS[(i || 0) % CAT_COLORS.length];
-  const inicial = (p.nombre_comun || "?").charAt(0).toUpperCase();
   const usos = Array.isArray(p.usos) ? p.usos.slice(0, 3).join(" · ") : "";
+  const imagePath = getPlantImagePath(p.nombre_comun);
+  const img = imagePath
+    ? `<img data-src="${escapeAttr(imagePath)}" alt="${escapeAttr(p.nombre_comun || "Planta medicinal")}" onerror="handlePlantImageError(this, 'cat-card-img-fallback')" />`
+    : `<div class="cat-card-img-fallback">🌿</div>`;
   return `
-    <article class="cat-card">
-      <div class="cat-card-box" style="background: ${color}">${inicial}</div>
+    <article class="cat-card" data-index="${i}">
+      <div class="cat-card-img">${img}</div>
       <div class="cat-card-body">
         <div class="cat-card-nombre">${escapeHtml(p.nombre_comun || "—")}</div>
         <div class="cat-card-cientifico">${escapeHtml(p.nombre_cientifico || "")}</div>
         ${usos ? `<div class="cat-card-usos">${escapeHtml(usos)}</div>` : ""}
       </div>
-      <div class="cat-card-footer">Catálogo general</div>
+      <div class="cat-card-footer">
+        <span>Catálogo general</span>
+        <button class="cat-card-ver" type="button">Ver ficha →</button>
+      </div>
     </article>
   `;
 }
@@ -988,6 +1069,72 @@ function getWikiUrl(name) {
   // Si parece nombre de archivo (Contiene extensión o guiones), no podemos
   // construir la URL sin el hash de Wikimedia → fallback a inicial
   return null;
+}
+
+function slugifyPlantName(nombre) {
+  if (!nombre || typeof nombre !== "string") return "";
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getPlantImagePath(nombreComun) {
+  const slug = slugifyPlantName(nombreComun);
+  return slug ? `assets/images/plants/${slug}.jpg` : null;
+}
+
+function handlePlantImageError(img, fallbackClass) {
+  if (!img.dataset.triedPng && img.src.endsWith(".jpg")) {
+    img.dataset.triedPng = "true";
+    img.src = img.src.replace(/\.jpg$/, ".png");
+    return;
+  }
+
+  img.replaceWith(Object.assign(document.createElement("div"), {
+    className: fallbackClass,
+    textContent: "🌿",
+  }));
+}
+
+function getChatPlantData(data) {
+  if (!data || typeof data !== "object") return null;
+  const raw = data.planta || data.plant || data.resultado || data.datos_planta || data;
+  if (!raw || typeof raw !== "object") return null;
+
+  const hasPlantShape = Boolean(
+    raw.nombre_comun ||
+    raw.nombre ||
+    raw.common_name ||
+    raw.nombres_comunes?.length ||
+    raw.nombre_cientifico ||
+    raw.scientific_name ||
+    raw.usos_medicinales ||
+    raw.usos ||
+    raw.nivel_evidencia ||
+    raw.evidencia
+  );
+  if (!hasPlantShape) return null;
+
+  const nombre = raw.nombre_comun || raw.nombre || raw.common_name || raw.nombres_comunes?.[0];
+  if (!nombre) return null;
+
+  const fuentes = raw.fuentes || raw.sources || data.fuentes || data.sources || [];
+  const fuentePrincipal = raw.fuente_principal || raw.fuente || fuentes[0]?.nombre || fuentes[0]?.name || (typeof fuentes[0] === "string" ? fuentes[0] : "");
+
+  return {
+    ...raw,
+    nombre_comun: nombre,
+    nombre_cientifico: raw.nombre_cientifico || raw.cientifico || raw.scientific_name || "",
+    usos_medicinales: raw.usos_medicinales || raw.usos || [],
+    nivel_evidencia: raw.nivel_evidencia || raw.evidencia || "",
+    advertencia: raw.advertencia || raw.warning || "",
+    fuente_principal: fuentePrincipal,
+    fuente_url: raw.fuente_url || raw.url || fuentes[0]?.url || "",
+    fuentes,
+  };
 }
 
 function escapeAttr(s) { return escapeHtml(s); }

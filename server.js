@@ -196,11 +196,126 @@ const QUIZ_DEMO = [
   },
 ];
 
+const CHAT_SYMPTOM_KEYWORDS = {
+  insomnio: ["insomnio", "dormir", "sueño", "descanso", "sedante", "relajante", "ansiedad", "nervios"],
+  ansiedad: ["ansiedad", "estres", "nervios", "nervioso", "relajante", "sedante", "tranquilizante"],
+  gastritis: ["gastritis", "digestivo", "estomago", "acidez", "ardor", "reflujo", "dispepsia"],
+  digestion: ["digestivo", "digestion", "estomago", "gases", "flatulencia", "colitis", "pesadez"],
+  nauseas: ["nauseas", "nausea", "vomitos", "antiemetico", "mareo", "cinetosis"],
+  gripe: ["gripe", "gripa", "resfriado", "catarro", "tos", "congestion", "respiratorio", "bronquial"],
+  tos: ["tos", "antitusivo", "respiratorio", "bronquial", "expectorante", "congestion"],
+  piel: ["piel", "quemadura", "herida", "cicatrizante", "dermatitis", "acne", "irritacion"],
+  dolor: ["dolor", "analgesico", "antiinflamatorio", "inflamacion", "migraña", "cabeza"],
+};
+
+function normalizarTexto(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokensBusqueda(texto) {
+  const base = normalizarTexto(texto)
+    .split(" ")
+    .filter((token) => token.length > 2);
+
+  const expandidos = new Set(base);
+  for (const token of base) {
+    const keywords = CHAT_SYMPTOM_KEYWORDS[token];
+    if (keywords) keywords.forEach((keyword) => expandidos.add(keyword));
+  }
+
+  return [...expandidos];
+}
+
+function textoPlanta(planta) {
+  return normalizarTexto([
+    planta.nombre_comun,
+    planta.nombre_cientifico,
+    planta.familia,
+    Array.isArray(planta.usos) ? planta.usos.join(" ") : planta.usos,
+    planta.preparacion,
+    planta.contraindicaciones,
+    planta.parte_usada,
+  ].filter(Boolean).join(" "));
+}
+
+function puntuarPlanta(planta, consulta, tokens) {
+  const nombreComun = normalizarTexto(planta.nombre_comun);
+  const nombreCientifico = normalizarTexto(planta.nombre_cientifico);
+  const usos = normalizarTexto(Array.isArray(planta.usos) ? planta.usos.join(" ") : planta.usos);
+  const blob = textoPlanta(planta);
+
+  let score = 0;
+  if (nombreComun && consulta.includes(nombreComun)) score += 12;
+  if (nombreCientifico && consulta.includes(nombreCientifico)) score += 10;
+
+  for (const token of tokens) {
+    if (nombreComun.split(" ").includes(token)) score += 7;
+    else if (nombreComun.includes(token)) score += 5;
+    if (nombreCientifico.includes(token)) score += 4;
+    if (usos.includes(token)) score += 4;
+    else if (blob.includes(token)) score += 1;
+  }
+
+  return score;
+}
+
+function buscarPlantaParaChat(mensaje) {
+  const consulta = normalizarTexto(mensaje);
+  const tokens = tokensBusqueda(mensaje);
+  if (!consulta || !tokens.length) return null;
+
+  let mejor = null;
+  let mejorScore = 0;
+
+  for (const planta of PLANTAS) {
+    const score = puntuarPlanta(planta, consulta, tokens);
+    if (score > mejorScore) {
+      mejor = planta;
+      mejorScore = score;
+    }
+  }
+
+  return mejorScore >= 4 ? mejor : null;
+}
+
+function crearRespuestaPlanta(planta, mensaje) {
+  const usos = Array.isArray(planta.usos) ? planta.usos.slice(0, 4) : [];
+  const usosTexto = usos.length ? usos.join(", ") : "usos tradicionales registrados";
+  const sources = [
+    { nombre: "Catálogo FloraIntellect", tipo: "base local" },
+  ];
+
+  return {
+    reply: `Encontré una coincidencia para "${mensaje}": ${planta.nombre_comun}. En el catálogo se asocia con ${usosTexto}. Esta información es educativa y no sustituye orientación médica.`,
+    plant: {
+      ...planta,
+      nivel_evidencia: planta.nivel_evidencia || "catalogo",
+      advertencia: planta.contraindicaciones || "",
+      fuentes: sources,
+      fuente_principal: "Catálogo FloraIntellect",
+    },
+    sources,
+    fuentes: sources,
+  };
+}
+
 // Demo: respuesta local sin IA real. Se mantiene "fuentes" por compatibilidad
 // con app.js y "sources" por claridad para futuras integraciones.
 app.post("/chat", (req, res) => {
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
   const last = messages.at(-1)?.content || "tu consulta";
+  const match = buscarPlantaParaChat(last);
+
+  if (match) {
+    res.json(crearRespuestaPlanta(match, last));
+    return;
+  }
 
   res.json({
     reply: `Respuesta de demostracion: recibi tu consulta sobre "${last}". Para la demo, FloraIntellect muestra informacion educativa y recomienda contrastar cualquier uso medicinal con fuentes verificadas y personal de salud.`,

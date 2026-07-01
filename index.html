@@ -909,6 +909,117 @@
     .msg-badge.disclaimer {
       background: var(--color-warning-bg); color: var(--color-warning);
     }
+    .plant-msg-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-3);
+      animation: msgIn 200ms ease;
+    }
+    .plant-msg-text {
+      max-width: 80%;
+    }
+    .plant-msg-card {
+      width: 100%;
+      max-width: 100%;
+      display: grid;
+      grid-template-columns: minmax(150px, 34%) 1fr;
+      gap: 0;
+      overflow: hidden;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    .plant-msg-img {
+      min-height: 220px;
+      background: linear-gradient(135deg, #F3FAF4 0%, #E4F2E8 100%);
+      overflow: hidden;
+    }
+    .plant-msg-img img {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      display: block;
+      object-fit: cover;
+    }
+    .plant-msg-img-fallback {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+      font-size: 2.25rem;
+    }
+    .plant-msg-body {
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .plant-msg-name {
+      font: 600 var(--text-lg)/1.25 'Playfair Display', Georgia, serif;
+      color: var(--color-text-primary);
+    }
+    .plant-msg-sci {
+      font-style: italic;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    .plant-msg-evidence {
+      color: var(--color-primary);
+      font: 600 var(--text-xs)/1 'Inter', sans-serif;
+    }
+    .plant-msg-usos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .plant-msg-usos span,
+    .plant-msg-sources span,
+    .plant-msg-sources a {
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+      background: var(--color-accent-light);
+      color: var(--color-primary);
+      font: 500 var(--text-xs)/1 'Inter', sans-serif;
+      text-decoration: none;
+    }
+    .plant-msg-warning {
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+      font-size: var(--text-xs);
+      line-height: 1.45;
+    }
+    .plant-msg-button {
+      align-self: flex-start;
+      margin-top: 2px;
+      background: transparent;
+      border: none;
+      color: var(--color-primary);
+      cursor: pointer;
+      font: 600 var(--text-sm)/1 'Inter', sans-serif;
+      padding: 0;
+    }
+    .plant-msg-button:hover { text-decoration: underline; }
+    .plant-msg-sources {
+      max-width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-left: 2px;
+    }
+    @media (max-width: 639px) {
+      .plant-msg-text { max-width: 100%; }
+      .plant-msg-card { grid-template-columns: 1fr; }
+      .plant-msg-img img,
+      .plant-msg-img-fallback { min-height: 150px; }
+    }
     .msg-typing {
       align-self: flex-start;
       display: inline-flex; gap: 4px;
@@ -1313,13 +1424,12 @@
       border-radius: var(--radius-md);
       overflow: hidden;
       margin-bottom: var(--space-4);
-      background: var(--color-bg-subtle);
+      background: linear-gradient(135deg, #F3FAF4 0%, #E4F2E8 100%);
     }
     .modal-img img { width: 100%; height: 100%; object-fit: cover; }
     .modal-img-fallback {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Playfair Display', serif; font-weight: 600;
       font-size: 4rem; color: var(--color-accent);
     }
     .modal-nombre {
@@ -1428,6 +1538,7 @@
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
       overflow: hidden;
+      cursor: pointer;
       transition: border-color var(--motion-soft), box-shadow var(--motion-soft), transform var(--motion-soft);
     }
     .cat-card:hover {
@@ -1441,6 +1552,26 @@
       font-family: 'Playfair Display', serif; font-weight: 600;
       font-size: 2.25rem;
       color: white;
+    }
+    .cat-card-img {
+      height: 120px;
+      background: linear-gradient(135deg, #F3FAF4 0%, #E4F2E8 100%);
+      overflow: hidden;
+    }
+    .cat-card-img img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .cat-card-img-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+      font-size: 2.25rem;
     }
     .cat-card-body { padding: 12px 14px; }
     .cat-card-nombre {
@@ -1469,6 +1600,22 @@
       border-top: 1px solid var(--color-border);
       font-size: var(--text-xs);
       color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .cat-card-ver {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--color-primary);
+      font: 500 var(--text-xs)/1 'Inter', sans-serif;
+      padding: 0;
+      white-space: nowrap;
+    }
+    .cat-card-ver:hover {
+      text-decoration: underline;
     }
     .cat-skel-card {
       background: var(--color-bg-card);
