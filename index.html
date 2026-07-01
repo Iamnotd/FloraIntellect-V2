@@ -668,12 +668,81 @@
       font: 500 var(--text-xs)/1 'Inter', sans-serif;
     }
 
+    .home-info-section {
+      margin-top: var(--space-12);
+    }
+
+    .home-info-text {
+      max-width: 820px;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      margin-bottom: var(--space-6);
+    }
+
+    .home-compact-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+    }
+
+    .home-featured-card.compact {
+      min-height: 0;
+      padding: var(--space-4);
+    }
+
+    .home-tech-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+
+    .home-tech-list span,
+    .roadmap-state {
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      background: var(--color-bg-subtle);
+      color: var(--color-text-secondary);
+      font: 600 var(--text-sm)/1 'Inter', sans-serif;
+    }
+
+    .home-version {
+      margin-top: var(--space-6);
+      padding: var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-subtle);
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+    }
+
+    .home-version strong {
+      display: block;
+      color: var(--color-primary);
+      margin-bottom: 4px;
+    }
+
+    .roadmap-state.done {
+      background: #E8F5E9;
+      color: var(--color-success);
+    }
+
+    .roadmap-state.pending {
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+    }
+
     @media (max-width: 1023px) {
       .home-benefits {
         grid-template-columns: repeat(2, 1fr);
       }
 
       .home-featured-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .home-compact-grid {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -690,6 +759,10 @@
       }
 
       .home-featured-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .home-compact-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1813,6 +1886,96 @@
         <span>Piel</span>
         <span>Uso tópico</span>
       </div>
+    </article>
+  </div>
+</div>
+
+<div class="home-info-section">
+  <div class="home-featured-head">
+    <h2>🌿 Sobre FloraIntellect V2</h2>
+    <p>FloraIntellect V2 es una plataforma web educativa desarrollada para facilitar el acceso a información organizada sobre plantas medicinales. El proyecto integra un catálogo amplio, plantas verificadas, una interfaz moderna y una arquitectura preparada para incorporar inteligencia artificial y reconocimiento por imágenes.</p>
+  </div>
+
+  <div class="home-compact-grid">
+    <article class="home-featured-card compact">
+      <div class="home-featured-icon">🌿</div>
+      <h3 class="home-featured-name">296 plantas medicinales</h3>
+    </article>
+
+    <article class="home-featured-card compact">
+      <div class="home-featured-icon">📚</div>
+      <h3 class="home-featured-name">15 plantas verificadas</h3>
+    </article>
+
+    <article class="home-featured-card compact">
+      <div class="home-featured-icon">🤖</div>
+      <h3 class="home-featured-name">Chat inteligente</h3>
+      <div class="home-featured-tags"><span>Demostración</span></div>
+    </article>
+
+    <article class="home-featured-card compact">
+      <div class="home-featured-icon">📷</div>
+      <h3 class="home-featured-name">Identificación por imagen</h3>
+      <div class="home-featured-tags"><span>Demostración</span></div>
+    </article>
+  </div>
+
+  <div class="home-version">
+    <strong>Tecnologías</strong>
+    <div class="home-tech-list" aria-label="Tecnologías utilizadas">
+      <span>HTML5</span>
+      <span>CSS3</span>
+      <span>JavaScript</span>
+      <span>Node.js</span>
+      <span>Express</span>
+      <span>Git</span>
+      <span>GitHub</span>
+    </div>
+  </div>
+
+  <div class="home-version">
+    <strong>Versión</strong>
+    FloraIntellect V2 — Demo Académica 2026
+  </div>
+</div>
+
+<div class="home-info-section">
+  <div class="home-featured-head">
+    <h2>🚀 Roadmap del Proyecto</h2>
+    <p>Estado general de los módulos preparados para la presentación y las próximas etapas del proyecto.</p>
+  </div>
+
+  <div class="home-compact-grid">
+    <article class="home-featured-card compact">
+      <span class="roadmap-state done">✅ Home</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state done">✅ Catálogo</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state done">✅ Verificadas</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state done">✅ Backend</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state pending">🟡 Chat IA</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state pending">🟡 Identificación IA</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state pending">🟡 Dashboard</span>
+    </article>
+
+    <article class="home-featured-card compact">
+      <span class="roadmap-state pending">🟡 Usuarios</span>
     </article>
   </div>
 </div>
