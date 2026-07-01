@@ -118,6 +118,130 @@ app.get("/verificadas", (req, res) => {
 });
 
 // ======================================================
+// Endpoints de demostracion
+// Pendientes de reemplazar por integraciones reales de IA
+// y servicios de identificacion en una fase futura.
+// ======================================================
+
+const QUIZ_DEMO = [
+  {
+    pregunta: "Que planta se usa tradicionalmente para molestias digestivas leves?",
+    opciones: [
+      { id: "manzanilla", texto: "Manzanilla" },
+      { id: "eucalipto", texto: "Eucalipto" },
+      { id: "romero", texto: "Romero" },
+      { id: "lavanda", texto: "Lavanda" },
+    ],
+    correcta_id: "manzanilla",
+    planta: {
+      nombre: "Manzanilla",
+      cientifico: "Matricaria chamomilla",
+    },
+  },
+  {
+    pregunta: "Que planta es conocida por su uso en vaporizaciones respiratorias?",
+    opciones: [
+      { id: "aloe", texto: "Aloe vera" },
+      { id: "eucalipto", texto: "Eucalipto" },
+      { id: "valeriana", texto: "Valeriana" },
+      { id: "menta", texto: "Menta" },
+    ],
+    correcta_id: "eucalipto",
+    planta: {
+      nombre: "Eucalipto",
+      cientifico: "Eucalyptus globulus",
+    },
+  },
+  {
+    pregunta: "Que planta suele asociarse con apoyo para el descanso?",
+    opciones: [
+      { id: "jengibre", texto: "Jengibre" },
+      { id: "valeriana", texto: "Valeriana" },
+      { id: "calendula", texto: "Calendula" },
+      { id: "boldo", texto: "Boldo" },
+    ],
+    correcta_id: "valeriana",
+    planta: {
+      nombre: "Valeriana",
+      cientifico: "Valeriana officinalis",
+    },
+  },
+  {
+    pregunta: "Que planta se usa comunmente en geles para irritaciones leves de piel?",
+    opciones: [
+      { id: "aloe", texto: "Aloe vera" },
+      { id: "menta", texto: "Menta" },
+      { id: "tilo", texto: "Tilo" },
+      { id: "anis", texto: "Anis" },
+    ],
+    correcta_id: "aloe",
+    planta: {
+      nombre: "Aloe vera",
+      cientifico: "Aloe vera",
+    },
+  },
+  {
+    pregunta: "Que raiz se usa tradicionalmente para nauseas leves?",
+    opciones: [
+      { id: "romero", texto: "Romero" },
+      { id: "jengibre", texto: "Jengibre" },
+      { id: "salvia", texto: "Salvia" },
+      { id: "ortiga", texto: "Ortiga" },
+    ],
+    correcta_id: "jengibre",
+    planta: {
+      nombre: "Jengibre",
+      cientifico: "Zingiber officinale",
+    },
+  },
+];
+
+// Demo: respuesta local sin IA real. Se mantiene "fuentes" por compatibilidad
+// con app.js y "sources" por claridad para futuras integraciones.
+app.post("/chat", (req, res) => {
+  const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const last = messages.at(-1)?.content || "tu consulta";
+
+  res.json({
+    reply: `Respuesta de demostracion: recibi tu consulta sobre "${last}". Para la demo, FloraIntellect muestra informacion educativa y recomienda contrastar cualquier uso medicinal con fuentes verificadas y personal de salud.`,
+    sources: ["OMS", "TRAMIL"],
+    fuentes: [
+      { nombre: "OMS", tipo: "referencia educativa" },
+      { nombre: "TRAMIL", tipo: "referencia etnobotanica" },
+    ],
+  });
+});
+
+// Demo: identificacion simulada. La imagen se ignora hasta integrar un
+// servicio real de vision o reconocimiento botanico.
+app.post("/identificar", (req, res) => {
+  res.json({
+    encontrada: true,
+    nombre: "Manzanilla",
+    nombres_comunes: ["Manzanilla"],
+    nombre_cientifico: "Matricaria chamomilla",
+    familia: "Asteraceae",
+    confianza: 87,
+    descripcion:
+      "Identificacion simulada para demostracion. La manzanilla es una planta medicinal conocida por sus capitulos florales aromaticos.",
+    advertencia:
+      "Uso educativo. No sustituye diagnostico medico ni confirma la especie real de la imagen.",
+    datos_verificados: true,
+    nivel_evidencia: "media",
+    fuente: "OMS / TRAMIL",
+    respuesta:
+      "Preparacion: infusion suave de flores secas en agua caliente. Contraindicaciones: evitar en caso de alergia a plantas de la familia Asteraceae. Interacciones: consultar con personal de salud si se toman anticoagulantes, sedantes u otros medicamentos.",
+  });
+});
+
+// Demo: banco local de 5 preguntas. El frontend actual espera una pregunta
+// por solicitud, por eso se devuelve una seleccion aleatoria del arreglo.
+app.get("/quiz", (req, res) => {
+  const index = Math.floor(Math.random() * QUIZ_DEMO.length);
+  res.json(QUIZ_DEMO[index]);
+});
+
+// ======================================================
 // Inicio servidor
 // ======================================================
 
