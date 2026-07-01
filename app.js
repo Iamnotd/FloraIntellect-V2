@@ -206,6 +206,21 @@ function renderPlantCardMessage(plant, text = "", fuentes = [], animate = true) 
     : [];
   const fuenteItems = plant.fuentes?.length ? plant.fuentes : fuentes;
   const evidencia = plant.nivel_evidencia || plant.evidencia || "";
+  const fuenteTexto = [
+    plant.fuente_principal,
+    ...fuenteItems.map(f => typeof f === "string" ? f : (f.nombre || f.name || "")),
+  ].join(" ").toLowerCase();
+  const evidenceClass = /oms|tramil/.test(fuenteTexto) ? "verified" : "catalog";
+  const evidenceLabel = /oms|tramil/.test(fuenteTexto)
+    ? "OMS / TRAMIL"
+    : (evidencia ? capitalize(evidencia) : "Catálogo");
+  const advertencia = plant.advertencia || plant.contraindicaciones || "";
+  const details = [
+    plant.familia ? ["Familia", plant.familia] : null,
+    plant.parte_usada ? ["Parte usada", plant.parte_usada] : null,
+    plant.preparacion ? ["Preparación", plant.preparacion] : null,
+    plant.dosis ? ["Dosis", plant.dosis] : null,
+  ].filter(Boolean);
 
   const group = document.createElement("div");
   group.className = "plant-msg-group";
@@ -220,11 +235,35 @@ function renderPlantCardMessage(plant, text = "", fuentes = [], animate = true) 
           : `<div class="plant-msg-img-fallback">🌿</div>`}
       </div>
       <div class="plant-msg-body">
-        <div class="plant-msg-name">${escapeHtml(plant.nombre_comun || "Planta medicinal")}</div>
-        ${plant.nombre_cientifico ? `<div class="plant-msg-sci">${escapeHtml(plant.nombre_cientifico)}</div>` : ""}
-        ${evidencia ? `<div class="plant-msg-evidence">Evidencia: ${escapeHtml(capitalize(evidencia))}</div>` : ""}
-        ${usos.length ? `<div class="plant-msg-usos">${usos.map(u => `<span>${escapeHtml(u)}</span>`).join("")}</div>` : ""}
-        ${plant.advertencia ? `<div class="plant-msg-warning">${escapeHtml(plant.advertencia)}</div>` : ""}
+        <div class="plant-msg-head">
+          <div>
+            <div class="plant-msg-name">${escapeHtml(plant.nombre_comun || "Planta medicinal")}</div>
+            ${plant.nombre_cientifico ? `<div class="plant-msg-sci">${escapeHtml(plant.nombre_cientifico)}</div>` : ""}
+          </div>
+          <span class="plant-msg-evidence ${evidenceClass}">${escapeHtml(evidenceLabel)}</span>
+        </div>
+        ${usos.length ? `
+          <section class="plant-msg-section">
+            <div class="plant-msg-section-title">Usos principales</div>
+            <div class="plant-msg-usos">${usos.map(u => `<span>${escapeHtml(u)}</span>`).join("")}</div>
+          </section>
+        ` : ""}
+        ${details.length ? `
+          <div class="plant-msg-details">
+            ${details.map(([label, value]) => `
+              <section class="plant-msg-detail">
+                <div class="plant-msg-section-title">${escapeHtml(label)}</div>
+                <p>${escapeHtml(value)}</p>
+              </section>
+            `).join("")}
+          </div>
+        ` : ""}
+        ${advertencia ? `
+          <section class="plant-msg-warning">
+            <div class="plant-msg-section-title">Advertencia</div>
+            <p>${escapeHtml(advertencia)}</p>
+          </section>
+        ` : ""}
         <button class="plant-msg-button" type="button">Ver ficha completa</button>
       </div>
     </article>
