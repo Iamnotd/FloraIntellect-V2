@@ -11,6 +11,7 @@ import dotenv from "dotenv";
 import { readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { createGroqChatResponse } from "./services/groq.js";
 
 dotenv.config();
 
@@ -307,10 +308,25 @@ function crearRespuestaPlanta(planta, mensaje) {
 
 // Demo: respuesta local sin IA real. Se mantiene "fuentes" por compatibilidad
 // con app.js y "sources" por claridad para futuras integraciones.
-app.post("/chat", (req, res) => {
+app.post("/chat", async (req, res) => {
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
   const last = messages.at(-1)?.content || "tu consulta";
   const match = buscarPlantaParaChat(last);
+
+  try {
+    const groqResponse = await createGroqChatResponse({
+      messages,
+      matchedPlant: match,
+      verificadas: VERIFICADAS,
+    });
+
+    if (groqResponse) {
+      res.json(groqResponse);
+      return;
+    }
+  } catch (error) {
+    console.error("[chat] Groq no disponible, usando modo demo:", error.message);
+  }
 
   if (match) {
     res.json(crearRespuestaPlanta(match, last));
@@ -319,6 +335,7 @@ app.post("/chat", (req, res) => {
 
   res.json({
     reply: `Respuesta de demostracion: recibi tu consulta sobre "${last}". Para la demo, FloraIntellect muestra informacion educativa y recomienda contrastar cualquier uso medicinal con fuentes verificadas y personal de salud.`,
+    plant: null,
     sources: ["OMS", "TRAMIL"],
     fuentes: [
       { nombre: "OMS", tipo: "referencia educativa" },
