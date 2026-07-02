@@ -12,6 +12,7 @@ import { readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createGroqChatResponse } from "./services/groq.js";
+import { identificarConPlantId } from "./services/plantid.js";
 
 dotenv.config();
 
@@ -306,6 +307,105 @@ function crearRespuestaPlanta(planta, mensaje) {
   };
 }
 
+function nombresParaComparar(planta) {
+  return [
+    planta?.nombre_comun,
+    planta?.nombre,
+    planta?.nombre_cientifico,
+    ...(Array.isArray(planta?.nombres_comunes) ? planta.nombres_comunes : []),
+    ...(Array.isArray(planta?.nombres_regionales) ? planta.nombres_regionales : []),
+  ].filter(Boolean).map(normalizarTexto);
+}
+
+function coincidePlanta(a, b) {
+  const nombresA = nombresParaComparar(a);
+  const nombresB = nombresParaComparar(b);
+  return nombresA.some(nombreA =>
+    nombresB.some(nombreB => nombreA && nombreB && (nombreA === nombreB || nombreA.includes(nombreB) || nombreB.includes(nombreA)))
+  );
+}
+
+function buscarCoincidenciaIdentificada(identificacion, lista) {
+  return lista.find(planta => coincidePlanta(identificacion, planta)) || null;
+}
+
+function listaTexto(valor) {
+  if (Array.isArray(valor)) return valor.join("; ");
+  return valor || "—";
+}
+
+function respuestaVerificada(planta) {
+  return [
+    `Preparación: ${listaTexto(planta.preparacion)}`,
+    `Contraindicaciones: ${listaTexto(planta.contraindicaciones)}`,
+    `Interacciones: ${listaTexto(planta.interacciones_farmacologicas)}`,
+  ].join(". ");
+}
+
+function enriquecerIdentificacion(identificacion) {
+  if (!identificacion?.encontrada) return identificacion;
+
+  const verificada = buscarCoincidenciaIdentificada(identificacion, VERIFICADAS);
+  if (verificada) {
+    return {
+      ...identificacion,
+      nombre: identificacion.nombre || verificada.nombre_comun,
+      nombres_comunes: identificacion.nombres_comunes?.length
+        ? identificacion.nombres_comunes
+        : [verificada.nombre_comun],
+      nombre_cientifico: identificacion.nombre_cientifico || verificada.nombre_cientifico,
+      familia: identificacion.familia || verificada.familia || "",
+      descripcion: identificacion.descripcion || verificada.descripcion || "",
+      datos_verificados: true,
+      nivel_evidencia: verificada.nivel_evidencia || "media",
+      fuente: verificada.fuente_principal || "OMS / TRAMIL",
+      respuesta: respuestaVerificada(verificada),
+    };
+  }
+
+  const catalogo = buscarCoincidenciaIdentificada(identificacion, PLANTAS);
+  if (catalogo) {
+    return {
+      ...identificacion,
+      nombre: identificacion.nombre || catalogo.nombre_comun,
+      nombres_comunes: identificacion.nombres_comunes?.length
+        ? identificacion.nombres_comunes
+        : [catalogo.nombre_comun],
+      nombre_cientifico: identificacion.nombre_cientifico || catalogo.nombre_cientifico,
+      familia: identificacion.familia || catalogo.familia || "",
+      descripcion: identificacion.descripcion || "",
+      datos_verificados: false,
+      respuesta: "Planta reconocida en el catálogo general. No hay ficha verificada OMS/TRAMIL disponible para esta coincidencia.",
+    };
+  }
+
+  return {
+    ...identificacion,
+    datos_verificados: false,
+    respuesta: "Plant.id reconoció una posible planta, pero no encontramos una ficha verificada en FloraIntellect para esta coincidencia.",
+  };
+}
+
+function respuestaIdentificacionDemo() {
+  return {
+    encontrada: true,
+    nombre: "Manzanilla",
+    nombres_comunes: ["Manzanilla"],
+    nombre_cientifico: "Matricaria chamomilla",
+    familia: "Asteraceae",
+    confianza: 87,
+    descripcion:
+      "Identificacion simulada para demostracion. La manzanilla es una planta medicinal conocida por sus capitulos florales aromaticos.",
+    advertencia:
+      "Uso educativo. No sustituye diagnostico medico ni confirma la especie real de la imagen.",
+    datos_verificados: true,
+    nivel_evidencia: "media",
+    fuente: "OMS / TRAMIL",
+    respuesta:
+      "Preparacion: infusion suave de flores secas en agua caliente. Contraindicaciones: evitar en caso de alergia a plantas de la familia Asteraceae. Interacciones: consultar con personal de salud si se toman anticoagulantes, sedantes u otros medicamentos.",
+  };
+}
+
 // Demo: respuesta local sin IA real. Se mantiene "fuentes" por compatibilidad
 // con app.js y "sources" por claridad para futuras integraciones.
 app.post("/chat", async (req, res) => {
@@ -344,26 +444,37 @@ app.post("/chat", async (req, res) => {
   });
 });
 
-// Demo: identificacion simulada. La imagen se ignora hasta integrar un
-// servicio real de vision o reconocimiento botanico.
-app.post("/identificar", (req, res) => {
-  res.json({
-    encontrada: true,
-    nombre: "Manzanilla",
-    nombres_comunes: ["Manzanilla"],
-    nombre_cientifico: "Matricaria chamomilla",
-    familia: "Asteraceae",
-    confianza: 87,
-    descripcion:
-      "Identificacion simulada para demostracion. La manzanilla es una planta medicinal conocida por sus capitulos florales aromaticos.",
-    advertencia:
-      "Uso educativo. No sustituye diagnostico medico ni confirma la especie real de la imagen.",
-    datos_verificados: true,
-    nivel_evidencia: "media",
-    fuente: "OMS / TRAMIL",
-    respuesta:
-      "Preparacion: infusion suave de flores secas en agua caliente. Contraindicaciones: evitar en caso de alergia a plantas de la familia Asteraceae. Interacciones: consultar con personal de salud si se toman anticoagulantes, sedantes u otros medicamentos.",
-  });
+// Identificacion real con Plant.id cuando PLANTID_KEY existe.
+// Si la clave no existe o Plant.id falla, se conserva el modo demo.
+app.post("/identificar", async (req, res) => {
+  const { imagen, tipo } = req.body || {};
+
+  if (!imagen) {
+    res.status(400).json({
+      error: "imagen_requerida",
+      message: "Debes enviar una imagen en base64.",
+    });
+    return;
+  }
+
+  try {
+    const identificacion = await identificarConPlantId({ imagen, tipo });
+    if (identificacion) {
+      res.json(enriquecerIdentificacion(identificacion));
+      return;
+    }
+  } catch (error) {
+    if (error.message === "imagen_requerida") {
+      res.status(400).json({
+        error: "imagen_requerida",
+        message: "Debes enviar una imagen en base64.",
+      });
+      return;
+    }
+    console.error("[identificar] Plant.id no disponible, usando modo demo:", error.message);
+  }
+
+  res.json(respuestaIdentificacionDemo());
 });
 
 // Demo: banco local de 5 preguntas. El frontend actual espera una pregunta
